@@ -1,72 +1,46 @@
 const express = require("express");
-const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
+const { Client, GatewayIntentBits } = require("discord.js");
 
 const app = express();
 app.use(express.json());
 
+// 🔐 VARIABLES RAILWAY
 const TOKEN = process.env.TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 
+// 🤖 DISCORD BOT
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
-let isReady = false;
+// Logs bot
+client.on("debug", console.log);
+client.on("error", console.error);
 
 client.once("ready", () => {
     console.log(`✅ Bot connecté : ${client.user.tag}`);
-    isReady = true;
 });
 
-// 🌐 TEST ROUTE
+// 🌐 ROUTE TEST
 app.get("/", (req, res) => {
     res.send("Bot is running ✅");
 });
 
-// 📩 APPLY ROUTE SAFE
-app.post("/apply", async (req, res) => {
-    try {
-        console.log("📩 REQUÊTE REÇUE :", req.body);
+// 📩 ROUTE APPLY (DEBUG ULTRA SIMPLE)
+app.post("/apply", (req, res) => {
+    console.log("🔥 APPLY HIT");
+    console.log("BODY:", req.body);
 
-        if (!isReady) {
-            console.log("⏳ Bot pas encore prêt");
-            return res.status(503).send("Bot not ready");
-        }
-
-        const channel = await client.channels.fetch(CHANNEL_ID).catch(err => {
-            console.error("❌ channel fetch error:", err);
-            return null;
-        });
-
-        if (!channel) {
-            console.log("❌ Channel introuvable");
-            return res.status(500).send("Channel not found");
-        }
-
-        const embed = new EmbedBuilder()
-            .setTitle("📥 Test candidature")
-            .setColor(0x2ecc71)
-            .addFields(
-                { name: "Test", value: "OK" }
-            )
-            .setTimestamp();
-
-        await channel.send({ embeds: [embed] });
-
-        console.log("📩 MESSAGE ENVOYÉ DISCORD");
-
-        res.status(200).send("OK");
-
-    } catch (err) {
-        console.error("❌ ERREUR /apply :", err);
-        res.status(500).send("Error");
-    }
+    res.status(200).send("OK FROM SERVER");
 });
 
-// 🚀 START
+// 🚀 START SERVER + BOT
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`🌐 API en ligne sur port ${PORT}`);
-    client.login(TOKEN);
+
+    client.login(TOKEN).catch(err => {
+        console.error("❌ Discord login error:", err);
+    });
 });
