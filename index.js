@@ -4,6 +4,7 @@ const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const app = express();
 app.use(express.json());
 
+// 🔐 VARIABLES RAILWAY
 const TOKEN = process.env.TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 
@@ -17,19 +18,25 @@ client.once("ready", () => {
     console.log("🌐 API en ligne");
 });
 
-// 🌐 ROUTE TEST
+// 🌐 ROUTE TEST (pour Railway)
 app.get("/", (req, res) => {
     res.send("Bot is running ✅");
 });
 
-// 📩 ROUTE FORM
+// 📩 ROUTE /apply (Google Form → Discord)
 app.post("/apply", async (req, res) => {
     try {
+        console.log("📩 REQUÊTE REÇUE :", req.body); // 🔥 DEBUG IMPORTANT
+
         const data = req.body;
 
-        const channel = await client.channels.fetch(CHANNEL_ID);
+        const channel = await client.channels.fetch(CHANNEL_ID).catch(err => {
+            console.error("❌ Erreur fetch channel :", err);
+            return null;
+        });
 
         if (!channel) {
+            console.log("❌ Salon introuvable");
             return res.status(500).send("Channel not found");
         }
 
@@ -51,10 +58,11 @@ app.post("/apply", async (req, res) => {
 
         await channel.send({ embeds: [embed] });
 
+        console.log("📩 Candidature envoyée sur Discord !");
         res.status(200).send("OK");
 
     } catch (err) {
-        console.error(err);
+        console.error("❌ ERREUR /apply :", err);
         res.status(500).send("Error");
     }
 });
