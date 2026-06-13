@@ -8,6 +8,10 @@ app.use(express.json());
 const TOKEN = process.env.TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 
+// 🚨 Vérif sécurité (très important)
+if (!TOKEN) console.error("❌ TOKEN manquant");
+if (!CHANNEL_ID) console.error("❌ CHANNEL_ID manquant");
+
 // 🤖 DISCORD BOT
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
@@ -15,10 +19,9 @@ const client = new Client({
 
 client.once("ready", () => {
     console.log(`✅ Bot connecté : ${client.user.tag}`);
-    console.log("🌐 API en ligne");
 });
 
-// 🌐 ROUTE TEST (pour Railway)
+// 🌐 ROUTE TEST (Railway)
 app.get("/", (req, res) => {
     res.send("Bot is running ✅");
 });
@@ -26,9 +29,12 @@ app.get("/", (req, res) => {
 // 📩 ROUTE /apply (Google Form → Discord)
 app.post("/apply", async (req, res) => {
     try {
-        console.log("📩 REQUÊTE REÇUE :", req.body); // 🔥 DEBUG IMPORTANT
+        console.log("📩 REQUÊTE REÇUE :", req.body);
 
-        const data = req.body;
+        if (!CHANNEL_ID) {
+            console.log("❌ CHANNEL_ID manquant");
+            return res.status(500).send("Missing CHANNEL_ID");
+        }
 
         const channel = await client.channels.fetch(CHANNEL_ID).catch(err => {
             console.error("❌ Erreur fetch channel :", err);
@@ -39,6 +45,8 @@ app.post("/apply", async (req, res) => {
             console.log("❌ Salon introuvable");
             return res.status(500).send("Channel not found");
         }
+
+        const data = req.body;
 
         const embed = new EmbedBuilder()
             .setTitle(`📥 Nouvelle candidature - ${data.pseudoIG || "Inconnu"}`)
@@ -58,7 +66,8 @@ app.post("/apply", async (req, res) => {
 
         await channel.send({ embeds: [embed] });
 
-        console.log("📩 Candidature envoyée sur Discord !");
+        console.log("📩 MESSAGE ENVOYÉ SUR DISCORD");
+
         res.status(200).send("OK");
 
     } catch (err) {
