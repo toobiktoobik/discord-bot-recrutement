@@ -4,69 +4,56 @@ const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const app = express();
 app.use(express.json());
 
-// 🔐 VARIABLES RAILWAY
 const TOKEN = process.env.TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 
-// 🚨 Vérif sécurité (très important)
-if (!TOKEN) console.error("❌ TOKEN manquant");
-if (!CHANNEL_ID) console.error("❌ CHANNEL_ID manquant");
-
-// 🤖 DISCORD BOT
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
+let isReady = false;
+
 client.once("ready", () => {
     console.log(`✅ Bot connecté : ${client.user.tag}`);
+    isReady = true;
 });
 
-// 🌐 ROUTE TEST (Railway)
+// 🌐 TEST ROUTE
 app.get("/", (req, res) => {
     res.send("Bot is running ✅");
 });
 
-// 📩 ROUTE /apply (Google Form → Discord)
+// 📩 APPLY ROUTE SAFE
 app.post("/apply", async (req, res) => {
     try {
         console.log("📩 REQUÊTE REÇUE :", req.body);
 
-        if (!CHANNEL_ID) {
-            console.log("❌ CHANNEL_ID manquant");
-            return res.status(500).send("Missing CHANNEL_ID");
+        if (!isReady) {
+            console.log("⏳ Bot pas encore prêt");
+            return res.status(503).send("Bot not ready");
         }
 
         const channel = await client.channels.fetch(CHANNEL_ID).catch(err => {
-            console.error("❌ Erreur fetch channel :", err);
+            console.error("❌ channel fetch error:", err);
             return null;
         });
 
         if (!channel) {
-            console.log("❌ Salon introuvable");
+            console.log("❌ Channel introuvable");
             return res.status(500).send("Channel not found");
         }
 
-        const data = req.body;
-
         const embed = new EmbedBuilder()
-            .setTitle(`📥 Nouvelle candidature - ${data.pseudoIG || "Inconnu"}`)
+            .setTitle("📥 Test candidature")
             .setColor(0x2ecc71)
             .addFields(
-                { name: "Pseudo IG", value: data.pseudoIG || "N/A" },
-                { name: "Discord", value: data.discord || "N/A" },
-                { name: "BattleNet", value: data.battleNet || "N/A" },
-                { name: "Classe & Spé", value: data.classe || "N/A" },
-                { name: "WarcraftLogs", value: data.logs || "N/A" },
-                { name: "RaiderIO", value: data.rio || "N/A" },
-                { name: "Expérience", value: data.experience || "N/A" },
-                { name: "Vocal", value: data.vocal || "N/A" },
-                { name: "Extra", value: data.extra || "N/A" }
+                { name: "Test", value: "OK" }
             )
             .setTimestamp();
 
         await channel.send({ embeds: [embed] });
 
-        console.log("📩 MESSAGE ENVOYÉ SUR DISCORD");
+        console.log("📩 MESSAGE ENVOYÉ DISCORD");
 
         res.status(200).send("OK");
 
@@ -76,7 +63,7 @@ app.post("/apply", async (req, res) => {
     }
 });
 
-// 🚀 START SERVER + BOT
+// 🚀 START
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
